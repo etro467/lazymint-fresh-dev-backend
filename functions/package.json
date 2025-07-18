@@ -19,6 +19,7 @@
   "main": "lib/index.js",
   "dependencies": {
     "@google-cloud/aiplatform": "^4.4.0",
+    "@types/multer": "^2.0.0",
     "axios": "^1.10.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
@@ -30,6 +31,7 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@types/qrcode": "^1.5.5",
     "@types/sharp": "^0.31.1",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^5.62.0",

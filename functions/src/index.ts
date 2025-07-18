@@ -19,6 +19,15 @@ import {authenticateUser, optionalAuth} from "./shared/middleware";
 import multer from "multer"; // Add this import
 import { generateCampaignQR, uploadCampaignLogo } from "./handlers/assetHandlers"; // Add this import
 
+// ADD to existing imports
+import {
+  processClaim,
+  verifyClaim,
+  getClaimStatus,
+  listCampaignClaims,
+  downloadTicket
+} from "./handlers/claimHandlers";
+
 // Initialize Firebase Admin SDK (already done)
 admin.initializeApp();
 
@@ -57,6 +66,13 @@ app.delete("/campaigns/:id", authenticateUser, deleteCampaign);
 // ADD new Asset Management routes (after existing claims routes)
 app.post("/campaigns/:campaignId/qr", authenticateUser, generateCampaignQR);
 app.post("/campaigns/:campaignId/logo", authenticateUser, upload.single('logo'), uploadCampaignLogo);
+
+// ADD new Claims Processing routes (after existing campaign routes)
+app.post("/claims", processClaim);
+app.post("/claims/verify", verifyClaim);
+app.get("/claims/:claimId/status", getClaimStatus);
+app.get("/claims/:claimId/download", downloadTicket);
+app.get("/campaigns/:campaignId/claims", authenticateUser, listCampaignClaims);
 
 // PRESERVE existing 404 handler
 app.use("*", (req, res) => {

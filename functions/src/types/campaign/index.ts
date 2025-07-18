@@ -1,9 +1,8 @@
 import {Timestamp} from "firebase-admin/firestore";
-import {User} from "../user"; // Import existing User type
 
 export interface Campaign {
   id: string;
-  creatorId: string; // References User.uid
+  creatorId: string; // Reverted to creatorId
   title: string;
   description: string;
   logoUrl?: string;

@@ -1,5 +1,4 @@
-import {User} from "../types/user";
-import {Campaign, CampaignCreateRequest, CampaignUpdateRequest} from "../types/campaign";
+import {CampaignCreateRequest, CampaignUpdateRequest} from "../types/campaign/index";
 import {ClaimRequest} from "../types/claim";
 import {validateUserData} from "../utils/auth"; // Import existing validation
 
@@ -11,49 +10,10 @@ export interface ValidationResult {
 /**
  * Validates campaign creation data
  */
-export const validateCampaignData = (data: CampaignCreateRequest): ValidationResult => {
-  // Title validation
-  if (!data.title || data.title.trim().length < 3) {
-    return {isValid: false, error: "Campaign title must be at least 3 characters"};
-  }
-  if (data.title.length > 100) {
-    return {isValid: false, error: "Campaign title must be less than 100 characters"};
-  }
-
-  // Description validation
-  if (!data.description || data.description.trim().length < 10) {
-    return {isValid: false, error: "Campaign description must be at least 10 characters"};
-  }
-  if (data.description.length > 1000) {
-    return {isValid: false, error: "Campaign description must be less than 1000 characters"};
-  }
-
-  // Max claims validation
-  if (!data.maxClaims || data.maxClaims < 1) {
-    return {isValid: false, error: "Max claims must be at least 1"};
-  }
-  if (data.maxClaims > 10000) {
-    return {isValid: false, error: "Max claims cannot exceed 10,000"};
-  }
-
-  // URL validation (if provided)
-  if (data.logoUrl && !isValidUrl(data.logoUrl)) {
-    return {isValid: false, error: "Invalid logo URL format"};
-  }
-  if (data.ticketBackgroundUrl && !isValidUrl(data.ticketBackgroundUrl)) {
-    return {isValid: false, error: "Invalid ticket background URL format"};
-  }
-
-  return {isValid: true};
-};
-
-/**
- * Validates campaign update data
- */
-export const validateCampaignUpdateData = (data: CampaignUpdateRequest): ValidationResult => {
+export const validateCampaignData = (data: CampaignCreateRequest | CampaignUpdateRequest): ValidationResult => {
   // Title validation
   if (data.title !== undefined) {
-    if (data.title.trim().length < 3) {
+    if (!data.title || data.title.trim().length < 3) {
       return {isValid: false, error: "Campaign title must be at least 3 characters"};
     }
     if (data.title.length > 100) {
@@ -63,7 +23,7 @@ export const validateCampaignUpdateData = (data: CampaignUpdateRequest): Validat
 
   // Description validation
   if (data.description !== undefined) {
-    if (data.description.trim().length < 10) {
+    if (!data.description || data.description.trim().length < 10) {
       return {isValid: false, error: "Campaign description must be at least 10 characters"};
     }
     if (data.description.length > 1000) {
@@ -73,7 +33,7 @@ export const validateCampaignUpdateData = (data: CampaignUpdateRequest): Validat
 
   // Max claims validation
   if (data.maxClaims !== undefined) {
-    if (typeof data.maxClaims !== "number" || data.maxClaims < 1) {
+    if (data.maxClaims < 1) {
       return {isValid: false, error: "Max claims must be at least 1"};
     }
     if (data.maxClaims > 10000) {
@@ -89,16 +49,8 @@ export const validateCampaignUpdateData = (data: CampaignUpdateRequest): Validat
     return {isValid: false, error: "Invalid ticket background URL format"};
   }
 
-  if (data.status !== undefined) {
-    const validStatuses = ["draft", "active", "paused", "completed", "archived"];
-    if (!validStatuses.includes(data.status)) {
-      return {isValid: false, error: "Invalid campaign status"};
-    }
-  }
-
   return {isValid: true};
 };
-
 
 /**
  * Validates claim request data

@@ -1,15 +1,15 @@
 import {Request, Response, NextFunction} from "express";
 import * as admin from "firebase-admin";
-import {sendAuthError, sendPermissionError} from "./errors";
+import {sendAuthError} from "./errors"; // Removed sendPermissionError
 
-// Extend Express Request to include user info
+// Extend Express Request to include user info and Multer file
 export interface AuthenticatedRequest extends Request {
   user?: {
     uid: string;
     email?: string;
     emailVerified?: boolean;
   };
-  file?: Express.Multer.File; // Add file property for multer
+  file?: Express.Multer.File; // Add Multer file definition
 }
 
 /**

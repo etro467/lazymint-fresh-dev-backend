@@ -3,12 +3,10 @@ import * as admin from "firebase-admin";
 import {Claim, ClaimRequest, ClaimVerification, ClaimStatus} from "../types/claim";
 import {Campaign} from "../types/campaign";
 import {validateClaimData} from "../shared/validation";
-import {sendErrorResponse, sendValidationError, sendAuthError, sendPermissionError} from "../shared/errors";
+import {sendErrorResponse, sendValidationError, sendAuthError, sendPermissionError} from "../shared/errors"; 
 import {AuthenticatedRequest} from "../shared/middleware";
-import {validateUserData} from "../utils/auth"; // Import existing validation
 import * as crypto from "crypto";
-import { generateTicketImage } from "./assetHandlers"; // Import for ticket generation
-import { generateVerificationEmail } from "../shared/emailTemplates"; // Import email template
+import {generateTicketImage} from "./assetHandlers";
 
 /**
  * Process a new claim (follows existing handler patterns)
@@ -39,7 +37,7 @@ export const processClaim = async (
         throw new Error('Campaign not found');
       }
 
-      const campaign = campaignDoc.data() as Campaign;
+      const campaign = campaignDoc.data() as Campaign; 
 
       // Validate campaign status
       if (campaign.status !== 'active') {
@@ -70,7 +68,7 @@ export const processClaim = async (
         id: claimRef.id,
         campaignId: claimData.campaignId,
         userId: '', // Will be set when user verifies email
-        creatorId: campaign.creatorId,
+        creatorId: campaign.creatorId, // Reverted to creatorId
         claimNumber: campaign.currentClaims + 1,
         email: claimData.email.toLowerCase(),
         status: 'pending' as ClaimStatus,
@@ -155,7 +153,7 @@ export const verifyClaim = async (
         throw new Error('Claim not found');
       }
 
-      const claim = claimDoc.data() as Claim;
+      const claim = claimDoc.data() as Claim; 
 
       // Validate verification token
       if (claim.verificationToken !== verificationToken) {
@@ -174,11 +172,11 @@ export const verifyClaim = async (
       }
 
       // Update claim status
-      const updates = {
+      const updates: Partial<Claim> = {
         status: 'verified' as ClaimStatus,
         verifiedAt: admin.firestore.Timestamp.now(),
         updatedAt: admin.firestore.Timestamp.now(),
-        verificationToken: admin.firestore.FieldValue.delete() // Remove token for security
+        verificationToken: admin.firestore.FieldValue.delete() as unknown as undefined 
       };
 
       transaction.update(claimRef, updates);
@@ -187,7 +185,7 @@ export const verifyClaim = async (
     });
 
     // Generate ticket (placeholder - implement ticket generation)
-    const ticketUrl = await generateTicket(result);
+    const ticketUrl = await generateTicket(result as Claim);
 
     // Update claim with ticket URL
     await admin.firestore().collection('claims').doc(claimId).update({
@@ -253,7 +251,7 @@ export const getClaimStatus = async (
       return;
     }
 
-    const claim = claimDoc.data() as Claim;
+    const claim = claimDoc.data() as Claim; 
 
     // Return sanitized claim data
     res.status(200).send({
@@ -302,8 +300,8 @@ export const listCampaignClaims = async (
       return;
     }
 
-    const campaign = campaignDoc.data() as Campaign;
-    if (campaign.creatorId !== req.user.uid) {
+    const campaign = campaignDoc.data() as Campaign; 
+    if (campaign.creatorId !== req.user.uid) { // Reverted to creatorId
       sendPermissionError(res, "Cannot access claims for this campaign");
       return;
     }
@@ -436,7 +434,7 @@ async function generateTicket(claim: Claim): Promise<string> {
       throw new Error('Campaign not found');
     }
     
-    const campaign = campaignDoc.data() as Campaign;
+    const campaign = campaignDoc.data() as Campaign; 
     
     // Generate ticket image
     const ticketUrl = await generateTicketImage(claim.id, campaign, claim);

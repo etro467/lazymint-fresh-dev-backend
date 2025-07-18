@@ -1,10 +1,9 @@
-import {Request, Response} from "express";
+import {Response} from "express";
 import * as admin from "firebase-admin";
-import {Campaign, CampaignCreateRequest, CampaignUpdateRequest, CampaignStatus} from "../types/campaign";
-import {validateCampaignData, validateCampaignUpdateData} from "../shared/validation"; // Corrected import
+import {Campaign, CampaignCreateRequest, CampaignUpdateRequest, CampaignStatus} from "../types/campaign/index";
+import {validateCampaignData} from "../shared/validation";
 import {sendErrorResponse, sendValidationError, sendAuthError, sendPermissionError} from "../shared/errors";
 import {AuthenticatedRequest} from "../shared/middleware";
-// import {sanitizeUserForResponse} from "../utils/auth"; // Removed as it's not directly used here
 
 /**
  * Create a new campaign (follows existing createUser pattern)
@@ -35,18 +34,19 @@ export const createCampaign = async (
     
     const campaign: Campaign = {
       id: campaignRef.id,
-      creatorId: req.user.uid,
+      creatorId: req.user.uid, // Reverted to creatorId
       title: campaignData.title.trim(),
       description: campaignData.description.trim(),
       logoUrl: campaignData.logoUrl,
       ticketBackgroundUrl: campaignData.ticketBackgroundUrl,
+      // qrCodeUrl is generated later, not part of initial creation
       maxClaims: campaignData.maxClaims,
       currentClaims: 0,
-      status: "draft" as CampaignStatus,
+      status: "draft", // Directly use string literal
       isPublic: campaignData.isPublic,
       createdAt: admin.firestore.Timestamp.now(),
       updatedAt: admin.firestore.Timestamp.now(),
-    };
+    } as Campaign; // Added type assertion
 
     // Use transaction for data consistency (following existing pattern)
     await db.runTransaction(async (transaction) => {
@@ -100,10 +100,10 @@ export const getCampaign = async (
       return;
     }
 
-    const campaign = campaignDoc.data() as Campaign;
+    const campaign = campaignDoc.data() as Campaign; // Explicitly cast to Campaign
 
     // Check permissions (public campaigns or owner can view)
-    if (!campaign.isPublic && (!req.user || req.user.uid !== campaign.creatorId)) {
+    if (!campaign.isPublic && (!req.user || req.user.uid !== campaign.creatorId)) { // Reverted to creatorId
       sendPermissionError(res, "Cannot access private campaign");
       return;
     }
@@ -157,15 +157,25 @@ export const updateCampaign = async (
         throw new Error('Campaign not found');
       }
 
-      const campaign = campaignDoc.data() as Campaign;
+      const campaign = campaignDoc.data() as Campaign; // Explicitly cast to Campaign
 
       // Check ownership
-      if (campaign.creatorId !== req.user!.uid) {
+      if (campaign.creatorId !== req.user!.uid) { // Reverted to creatorId
         throw new Error('Permission denied');
       }
 
       // Validate update data if provided
-      const validation = validateCampaignUpdateData(updateData);
+      const validationData: CampaignUpdateRequest = {
+        title: updateData.title || campaign.title,
+        description: updateData.description || campaign.description,
+        maxClaims: updateData.maxClaims || campaign.maxClaims,
+        isPublic: updateData.isPublic !== undefined ? updateData.isPublic : campaign.isPublic,
+        logoUrl: updateData.logoUrl || campaign.logoUrl,
+        ticketBackgroundUrl: updateData.ticketBackgroundUrl || campaign.ticketBackgroundUrl,
+        status: updateData.status || campaign.status
+      };
+        
+      const validation = validateCampaignData(validationData);
       if (!validation.isValid) {
         throw new Error(validation.error);
       }
@@ -190,7 +200,7 @@ export const updateCampaign = async (
 
     res.status(200).send({
       success: true,
-      data: sanitizeCampaignForResponse(updatedCampaign)
+      data: sanitizeCampaignForResponse(updatedCampaign as Campaign)
     });
 
   } catch (error) {
@@ -244,10 +254,10 @@ export const deleteCampaign = async (
         throw new Error('Campaign not found');
       }
 
-      const campaign = campaignDoc.data() as Campaign;
+      const campaign = campaignDoc.data() as Campaign; // Explicitly cast to Campaign
 
       // Check ownership
-      if (campaign.creatorId !== req.user!.uid) {
+      if (campaign.creatorId !== req.user!.uid) { // Reverted to creatorId
         throw new Error('Permission denied');
       }
 
@@ -306,7 +316,7 @@ export const listUserCampaigns = async (
 
     const db = admin.firestore();
     const campaignsQuery = db.collection('campaigns')
-      .where('creatorId', '==', req.user.uid)
+      .where('creatorId', '==', req.user.uid) // Reverted to creatorId
       .where('status', '!=', 'archived')
       .orderBy('status')
       .orderBy('createdAt', 'desc')
@@ -358,7 +368,7 @@ export const listPublicCampaigns = async (
 /**
  * Sanitize campaign data for API responses (follows existing sanitizeUserForResponse pattern)
  */
-const sanitizeCampaignForResponse = (campaign: Campaign): Omit<Campaign, 'never'> => {
+const sanitizeCampaignForResponse = (campaign: Campaign): Campaign => {
   // For campaigns, we don't need to remove sensitive fields like we do for users
   // But we maintain the pattern for consistency
   return campaign;
