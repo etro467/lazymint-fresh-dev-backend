@@ -1,7 +1,7 @@
 {
   "projects": {
     "default": "lazymint-fresh-dev",
-    "prod": "lazymint-fresh",
+    "prod": "lazymint-fresh", 
     "dev": "lazymint-fresh-dev"
   }
 }

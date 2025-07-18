@@ -1,4 +1,5 @@
 import {User} from "../types/user";
+import { Campaign } from "../types/campaign";
 
 export interface ValidationResult {
   isValid: boolean;
@@ -44,6 +45,44 @@ export const validateUserData = (data: Partial<User>): ValidationResult => {
   }
 
   return {isValid: true};
+};
+
+/**
+ * Validates campaign data for creation and updates
+ */
+export const validateCampaignData = (data: Partial<Campaign>): ValidationResult => {
+  if (data.title !== undefined) {
+    if (data.title.trim().length < 3) {
+      return { isValid: false, error: "Campaign title must be at least 3 characters" };
+    }
+    if (data.title.length > 100) {
+      return { isValid: false, error: "Campaign title must be less than 100 characters" };
+    }
+  }
+
+  if (data.description !== undefined) {
+    if (data.description.trim().length < 10) {
+      return { isValid: false, error: "Campaign description must be at least 10 characters" };
+    }
+    if (data.description.length > 500) {
+      return { isValid: false, error: "Campaign description must be less than 500 characters" };
+    }
+  }
+
+  if (data.maxClaims !== undefined) {
+    if (typeof data.maxClaims !== "number" || data.maxClaims <= 0) {
+      return { isValid: false, error: "Max claims must be a positive number" };
+    }
+  }
+
+  if (data.status !== undefined) {
+    const validStatuses = ["active", "inactive", "completed"];
+    if (!validStatuses.includes(data.status)) {
+      return { isValid: false, error: "Invalid campaign status" };
+    }
+  }
+
+  return { isValid: true };
 };
 
 /**
